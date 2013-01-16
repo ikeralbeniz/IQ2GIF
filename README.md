@@ -25,3 +25,5 @@ This script allow to generate GIF animations from captured IQ signals. The signa
 	  --impulse {DVB-T,DVB-T2,DAB}
 	                        Draw impulse response plot, if not set spectrum is
 	                        drawn
+#Example
+![Spectrum Animation](https://raw.github.com/ikeralbeniz/IQ2GIF/master/images/default2013010216231g.gif)
