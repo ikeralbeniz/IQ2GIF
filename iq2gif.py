@@ -134,8 +134,25 @@ def _writeGifToFile(fp, images, durations, loops):
     fp.write(";")  # end gif
     return frames
 
+def zoomImpulse(arrayvalues,reflevel=1.0):
+    total = 0
+    for i in arrayvalues:
+        total = total + i
 
-def IQFile2Gif(filename, startpoint=0,frames=0,duration=0.1,loops=0,impulse=False):#,hiddeplot=False):
+    partial = 0
+    lateral = 0
+    for i in arrayvalues:
+        partial = partial + i
+        percent = (partial * 100.0) / total
+        if percent >= reflevel:
+            return lateral
+        lateral = lateral + 1
+    return 0
+
+
+
+
+def IQFile2Gif(filename, startpoint=0,frames=0,duration=0.1,loops=0,impulse=False,bandwidth=[1.0,1.0]):#,hiddeplot=False):
 
     images2 = []
     f = open(filename, 'rb')  
@@ -146,10 +163,10 @@ def IQFile2Gif(filename, startpoint=0,frames=0,duration=0.1,loops=0,impulse=Fals
         plt.ion()
         fig = plt.figure()
         if frames == 0:
-            frames = f.size/8000;
+            frames = f.size/(32768/4);
         for test in range(0,frames):
             samples = []
-            for i in range(0,32001):
+            for i in range(0,32768):
                 short = f.read(2)
                 i = struct.unpack('h', short)[0]
                 short = f.read(2)
@@ -158,10 +175,16 @@ def IQFile2Gif(filename, startpoint=0,frames=0,duration=0.1,loops=0,impulse=Fals
                 samples.append(iq)
 
             # FFT of the signal
-            fftresult = fftshift(abs(fft(samples)))
+            start = int((32768/bandwidth[1])*((bandwidth[1]-bandwidth[0])/2))
+            end = int((32768/bandwidth[1])*(((bandwidth[1]-bandwidth[0])/2)+(bandwidth[0])))
+            fftresult = fftshift(abs(fft(samples)))[start:end]
 
             #if impulse response is selected - TO BE DONE
-            #if impulse != None:
+            if impulse != None:
+                if impulse == "RAW":
+                    fftresult = fftshift(abs(fft(fftresult)))
+                    lateral = zoomImpulse(fftresult,47.0)
+                    fftresult = fftresult[lateral:len(fftresult)-lateral]
             #    if impulse == "DVB-T"
             #        fftresult = dvbt_impulse(fftresult)
             #    elif impulse == "DVB-T2"
@@ -204,9 +227,24 @@ def IQFile2Gif(filename, startpoint=0,frames=0,duration=0.1,loops=0,impulse=Fals
         n = _writeGifToFile(fp, images2, durations, loops)
     finally:
         fp.close()
-
+   
 
 if __name__ == '__main__':
+
+    class bandwidth_parse(argparse.Action):
+        def __call__(self, parser, namespace, values, option_string=None):
+            try:
+                if values.find('@')>= 0:
+                    params = values.split('@')
+                    if len(params) != 2:
+                        raise argparse.ArgumentError(self, "Invalid argument format: <signal_bw>@<capture_bw>")
+                    result = [float(params[0]),float(params[1])]
+                    setattr(namespace, self.dest, result)
+                else:
+                    raise argparse.ArgumentError(self, "Invalid argument format: <signal_bw>@<capture_bw>")
+            except:
+                raise argparse.ArgumentError(self, "Invalid argument format: <signal_bw>@<capture_bw>")
+            
     parser = argparse.ArgumentParser(description='Convert IQ capture Spectrum or Impulse Response to GIF animation')
 
     parser.add_argument('filename', metavar='FILE', type=str,
@@ -219,9 +257,12 @@ if __name__ == '__main__':
                        help='Set number of loops of the animation, defaul is 0 that means infinte loops')
     parser.add_argument('--duration', dest='duration', metavar='TIME', type=float, default=0.1,
                        help='Time between frames')
-    parser.add_argument('--impulse', dest='impulse', choices=['DVB-T','DVB-T2','DAB'], default=None,
+    parser.add_argument('--impulse', dest='impulse', choices=['RAW','DVB-T','DVB-T2','DAB'], default=None,
                    help='Draw impulse response plot, if not set spectrum is drawn')
     #parser.add_argument('--hiddeplot', dest='hiddeplot', action='store_true', default=False,
     #               help='Avoid showing ploting window')
+    parser.add_argument('--bandwidth', metavar='<signal_bw>@<capture_bw>', dest='bandwidth', action=bandwidth_parse, default=[1.0,1.0],
+                   help='Define signal bandwidth and capture filter bandwigth')
     args = parser.parse_args()
-    IQFile2Gif(args.filename, args.startpoint, args.frames, args.duration, args.loops, args.impulse)#, args.hiddeplot)
+
+    IQFile2Gif(args.filename, args.startpoint, args.frames, args.duration, args.loops, args.impulse, args.bandwidth)#, args.hiddeplot)

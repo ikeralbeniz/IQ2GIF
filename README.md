@@ -1,12 +1,12 @@
 IQ2GIF
 ======
-
-#Explanation
 This script allow to generate GIF animations from captured IQ signals. The signals must be stored as 16 bits for real and other 16 bits for imaginary IQ samples. 
 
 #Usage
+
 	usage: iq2gif.py [-h] [--seek OFFSET] [--frames N] [--loops N]
-	                 [--duration TIME] [--impulse {DVB-T,DVB-T2,DAB}]
+	                 [--duration TIME] [--impulse {RAW,DVB-T,DVB-T2,DAB}]
+	                 [--bandwidth <signal_bw>@<capture_bw>]
 	                 FILE
 
 	Convert IQ capture Spectrum or Impulse Response to GIF animation
@@ -22,8 +22,11 @@ This script allow to generate GIF animations from captured IQ signals. The signa
 	  --loops N             Set number of loops of the animation, defaul is 0 that
 	                        means infinte loops
 	  --duration TIME       Time between frames
-	  --impulse {DVB-T,DVB-T2,DAB}
+	  --impulse {RAW,DVB-T,DVB-T2,DAB}
 	                        Draw impulse response plot, if not set spectrum is
 	                        drawn
+	  --bandwidth <signal_bw>@<capture_bw>
+	                        Define signal bandwidth and capture filter bandwigth	                        
 #Example
 ![Spectrum Animation](https://raw.github.com/ikeralbeniz/IQ2GIF/master/images/default2013010216231g.gif)
+![Impulse Response Animation](https://raw.github.com/ikeralbeniz/IQ2GIF/master/images/default2013010216231g_1.gif)
